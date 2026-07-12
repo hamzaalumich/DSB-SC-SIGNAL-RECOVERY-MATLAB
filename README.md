@@ -1,26 +1,28 @@
 # DSB-SC Signal Recovery with Spectral Filtering in MATLAB
 
-A MATLAB implementation of a complete Double-Sideband Suppressed-Carrier (DSB-SC) communication and signal-recovery chain using real audio, recorded noise, additive white Gaussian noise, narrowband interference, spectral analysis, digital filtering, and coherent demodulation.
+A MATLAB implementation of a complete Double-Sideband Suppressed-Carrier communication system using real audio, channel-noise modeling, FFT analysis, Welch power spectral density estimation, digital filtering, coherent demodulation, and quantitative signal-recovery evaluation.
+
+---
 
 ## Overview
 
-This project investigates the transmission and recovery of an amplitude-modulated audio signal under different channel-noise conditions.
+This project investigates the transmission and recovery of an amplitude-modulated audio signal under multiple channel-noise conditions.
 
 A real audio recording is used as the baseband message. The signal is preprocessed, modulated using DSB-SC modulation with a 10 kHz carrier, corrupted by noise and interference, analyzed in the time and frequency domains, filtered, coherently demodulated, and reconstructed.
 
 Two channel conditions are evaluated:
 
 1. Recorded audio noise
-2. Additive White Gaussian Noise (AWGN) with narrowband interference
+2. Additive White Gaussian Noise combined with narrowband interference
 
-Recovery performance is measured using:
+Recovery performance is evaluated using:
 
-- Signal-to-Noise Ratio (SNR)
-- Mean Squared Error (MSE)
-- Fast Fourier Transform (FFT) analysis
-- Welch Power Spectral Density (PSD) estimation
+- Signal-to-Noise Ratio
+- Mean Squared Error
+- Fast Fourier Transform analysis
+- Welch Power Spectral Density estimation
 - Time-domain waveform comparison
-- Original-versus-recovered spectral comparison
+- Original-versus-recovered PSD comparison
 - Recovered audio playback
 
 ---
@@ -32,9 +34,9 @@ Recovery performance is measured using:
 | Experiment 1 | Recorded audio noise | 16.23 dB | 0.000249 |
 | Experiment 2 | AWGN and narrowband interference | 6.79 dB | 0.001967 |
 
-The recorded-noise experiment produced stronger recovery because a significant portion of the unwanted energy could be removed through spectral filtering.
+The recorded-noise experiment produced stronger recovery because a significant portion of the unwanted spectral energy could be reduced through filtering.
 
-The AWGN experiment was more challenging because broadband noise overlaps the useful signal spectrum. Filtering can reduce out-of-band noise and isolated interference, but it cannot completely eliminate in-band noise without also affecting the desired message.
+The AWGN experiment was more challenging because broadband noise overlapped the useful message spectrum. Conventional filtering can reduce out-of-band noise and isolated interference, but it cannot completely remove in-band noise without also affecting the desired signal.
 
 ---
 
@@ -42,7 +44,10 @@ The AWGN experiment was more challenging because broadband noise overlaps the us
 
 This project demonstrates:
 
-- Real audio-signal preprocessing
+- Audio-signal preprocessing
+- Stereo-to-mono conversion
+- DC-offset removal
+- Signal normalization
 - DSB-SC amplitude modulation
 - Carrier-based frequency translation
 - FFT magnitude and phase analysis
@@ -57,11 +62,11 @@ This project demonstrates:
 - Coherent demodulation
 - FIR low-pass filtering
 - Audio reconstruction and playback
-- Quantitative validation using SNR and MSE
+- Performance validation using SNR and MSE
 
 ---
 
-## Signal-Processing Chain
+## Signal-Processing Workflow
 
 ```text
 Input Audio
@@ -106,17 +111,17 @@ SNR, MSE, Waveform, and PSD Evaluation
 
 ### Baseband Message
 
-The input message is represented by:
+The baseband message is represented by:
 
 $$
 m(t)
 $$
 
-The audio is converted to mono, limited to a short processing interval, centered by removing its DC component, and normalized before modulation.
+The input audio is converted to mono, limited to a short processing interval, centered by removing its DC component, and normalized before modulation.
 
 ### DSB-SC Modulation
 
-The transmitted DSB-SC signal is:
+The transmitted signal is defined as:
 
 $$
 s(t)=m(t)\cos(2\pi f_c t)
@@ -131,14 +136,26 @@ where:
 The carrier frequency used in this project is:
 
 $$
-f_c = 10\text{ kHz}
+f_c=10\text{ kHz}
 $$
 
 In the frequency domain, modulation shifts the baseband spectrum to two symmetric sidebands centered around $+f_c$ and $-f_c$.
 
-### Noisy Received Signal
+The resulting spectrum can be represented as:
 
-For the recorded-noise experiment, the received signal is modeled as:
+$$
+S(f)=\frac{1}{2}\left[M(f-f_c)+M(f+f_c)\right]
+$$
+
+---
+
+## Channel Models
+
+### Recorded Audio-Noise Channel
+
+The first experiment uses a recorded audio signal as the channel-noise source.
+
+The corrupted signal is modeled as:
 
 $$
 x(t)=s(t)+\alpha n(t)
@@ -147,57 +164,47 @@ $$
 where:
 
 - $s(t)$ is the transmitted DSB-SC signal
-- $n(t)$ is the normalized noise signal
+- $n(t)$ is the normalized recorded noise
 - $\alpha$ controls the noise amplitude
-- $x(t)$ is the corrupted received signal
-
----
-
-## Experimental Configurations
-
-### Experiment 1 — Recorded Audio Noise
-
-The first experiment uses a recorded audio signal as the noise source.
+- $x(t)$ is the received noisy signal
 
 The message and noise recordings are:
 
 - Converted to mono
-- Resampled when necessary
+- Resampled when required
 - Trimmed to equal lengths
 - DC-corrected
 - Independently normalized
 
-The normalized noise is then added to the DSB-SC signal using a configurable amplitude factor.
-
 This experiment represents a nonuniform noise source whose energy is concentrated in particular frequency regions.
 
-### Experiment 2 — AWGN and Narrowband Interference
+### AWGN and Narrowband-Interference Channel
 
-The second experiment replaces the recorded-noise channel with:
+The second experiment uses:
 
 - Additive White Gaussian Noise
-- Narrowband sinusoidal interferers
+- Narrowband sinusoidal interference
 
-AWGN introduces a broadband spectral floor across the frequency range, while the narrowband interferers appear as concentrated spectral peaks.
+AWGN introduces a broadband spectral floor across the frequency range, while narrowband interferers appear as concentrated peaks in the spectrum.
 
-This creates a more difficult recovery problem because some of the unwanted energy overlaps the useful sidebands.
+This produces a more difficult signal-recovery problem because part of the unwanted energy overlaps the desired DSB-SC sidebands.
 
 ---
 
 ## Audio Preprocessing
 
-Before modulation, the message audio is processed using the following sequence:
+Before modulation, the input audio is processed using the following sequence:
 
 1. Load the selected audio file
 2. Convert stereo audio to mono
-3. Limit the signal duration to approximately three seconds
+3. Limit the processed duration to approximately three seconds
 4. Remove the DC component
 5. Normalize the signal amplitude
-6. Generate the time vector
+6. Generate the corresponding time vector
 7. Compute the centered FFT
 8. Estimate the effective baseband bandwidth
 
-The preprocessing stage ensures consistent amplitude scaling and prepares the signal for modulation, filtering, and performance comparison.
+The preprocessing stage ensures consistent amplitude scaling and prepares the signal for modulation, filtering, and quantitative comparison.
 
 ---
 
@@ -209,7 +216,7 @@ The Fast Fourier Transform is used to analyze:
 - The noise signal
 - The DSB-SC modulated signal
 - The noisy received signal
-- The bandpass-filtered signal
+- The filtered signal
 - The recovered message
 
 The implementation uses:
@@ -234,13 +241,13 @@ Magnitude and phase plots are generated to identify:
 
 ## Welch Power Spectral Density Estimation
 
-Welch's method is used to obtain a statistically smoother estimate of signal-power distribution.
+Welch's method is used to obtain a smoother and more statistically stable estimate of signal-power distribution.
 
 The PSD calculation uses:
 
 - Hamming windows
 - Overlapping signal segments
-- A centered frequency representation
+- Centered frequency representation
 - Logarithmic power display in dB/Hz
 
 The MATLAB implementation uses:
@@ -258,46 +265,46 @@ PSD estimates are generated for:
 - The recovered message
 - Original-versus-recovered comparison
 
-Welch PSD analysis helps distinguish useful signal energy from the surrounding noise floor more clearly than a single FFT magnitude plot.
+Welch PSD analysis provides a clearer representation of signal energy and noise-floor behavior than a single FFT magnitude plot.
 
 ---
 
 ## Message-Bandwidth Estimation
 
-The effective message bandwidth is estimated from the normalized magnitude spectrum of the original audio signal.
+The effective message bandwidth is estimated from the normalized FFT magnitude of the original audio signal.
 
 The implementation:
 
 1. Normalizes the FFT magnitude
 2. Applies an amplitude threshold
-3. Identifies the significant frequency components
-4. Determines the maximum baseband frequency
+3. Identifies significant spectral components
+4. Determines the highest significant baseband frequency
 5. Adds a safety margin to reduce signal truncation
 
-The estimated bandwidth is then used to determine:
+The estimated bandwidth is used to determine:
 
-- The bandpass-filter limits
-- The frequency-domain mask width
-- The low-pass-filter cutoff frequency
+- Bandpass-filter limits
+- Frequency-domain mask width
+- Low-pass-filter cutoff frequency
 
 ---
 
-## Filtering Approaches
+## Filtering Methods
 
-Two filtering methods are implemented.
+Two filtering approaches are implemented.
 
 ### FIR Bandpass Filtering
 
-A finite impulse response bandpass filter is designed around the positive carrier region:
+A finite impulse response bandpass filter is designed around the carrier frequency:
 
 $$
-f_c-B \leq f \leq f_c+B
+f_c-B\leq f\leq f_c+B
 $$
 
 where:
 
 - $f_c$ is the carrier frequency
-- $B$ is the estimated message bandwidth
+- $B$ is the estimated baseband bandwidth
 
 The implementation uses:
 
@@ -307,11 +314,13 @@ hamming
 filtfilt
 ```
 
-`filtfilt` performs forward and reverse filtering, resulting in zero-phase distortion and avoiding a net group delay in the recovered waveform.
+The use of `filtfilt` performs forward and reverse filtering, resulting in zero-phase distortion and no net group delay.
+
+The FIR bandpass output is used as the default input to the coherent-demodulation stage.
 
 ### Frequency-Domain Spectral Masking
 
-A binary spectral mask is also implemented to preserve the sidebands around both positive and negative carrier frequencies:
+A binary frequency-domain mask is also implemented to preserve the desired sideband regions around both carrier frequencies:
 
 $$
 H(f)=
@@ -331,10 +340,12 @@ $$
 The corresponding time-domain signal is reconstructed using the inverse FFT:
 
 $$
-y(t)=\operatorname{IFFT}\{Y(f)\}
+y(t)=\mathrm{IFFT}\{Y(f)\}
 $$
 
-This method removes frequency components outside the selected DSB-SC sideband regions.
+This method removes spectral components outside the selected DSB-SC sideband regions.
+
+The MATLAB implementation also allows the frequency-domain filtered signal to be selected instead of the FIR-filtered signal for recovery and comparison.
 
 ---
 
@@ -346,12 +357,22 @@ $$
 z(t)=2y(t)\cos(2\pi f_c t)
 $$
 
-This operation produces:
+Using the modulation identity, this produces:
+
+$$
+z(t)=m(t)+m(t)\cos(4\pi f_c t)
+$$
+
+The result contains:
 
 - The recovered baseband message
 - A high-frequency component centered around $2f_c$
 
-A low-pass FIR filter removes the high-frequency term and preserves the reconstructed message.
+A low-pass FIR filter removes the high-frequency component and preserves the reconstructed message:
+
+$$
+m_{\mathrm{rec}}(t)=\mathrm{LPF}\{z(t)\}
+$$
 
 The recovered signal is then:
 
@@ -369,15 +390,15 @@ The recovered signal is then:
 
 The recovered SNR is calculated as:
 
-$$
-\text{SNR}
+```math
+\mathrm{SNR}
 =
 10\log_{10}
 \left(
 \frac{\sum m^2(t)}
-{\sum [m(t)-m_{\text{rec}}(t)]^2}
+{\sum \left[m(t)-m_{\mathrm{rec}}(t)\right]^2}
 \right)
-$$
+```
 
 A higher SNR indicates that the recovered signal more closely matches the original message.
 
@@ -385,13 +406,13 @@ A higher SNR indicates that the recovered signal more closely matches the origin
 
 The MSE is calculated as:
 
-$$
-\text{MSE}
+```math
+\mathrm{MSE}
 =
 \frac{1}{N}
 \sum
-[m(t)-m_{\text{rec}}(t)]^2
-$$
+\left[m(t)-m_{\mathrm{rec}}(t)\right]^2
+```
 
 A lower MSE indicates a smaller average reconstruction error.
 
@@ -399,7 +420,7 @@ A lower MSE indicates a smaller average reconstruction error.
 
 ## Results and Discussion
 
-### Recorded Audio-Noise Experiment
+### Experiment 1 — Recorded Audio Noise
 
 The recorded-noise experiment achieved:
 
@@ -408,22 +429,24 @@ Recovered SNR: 16.23 dB
 Recovered MSE: 0.000249
 ```
 
-The filtering stage successfully preserved the desired DSB-SC sidebands while reducing a significant portion of the unwanted out-of-band energy.
+The filtering stage preserved the desired DSB-SC sidebands while reducing a significant portion of the unwanted out-of-band energy.
 
-The recovered waveform retained the primary structure of the original audio signal, and the Welch PSD comparison showed close agreement throughout the useful baseband region.
+The recovered waveform retained the primary structure of the original audio signal, and the Welch PSD comparison showed close agreement across the useful baseband region.
 
-### AWGN and Narrowband-Interference Experiment
+This result demonstrates that spectral filtering can provide effective recovery when much of the unwanted noise energy lies outside the useful message bandwidth.
 
-The AWGN and interference experiment achieved:
+### Experiment 2 — AWGN and Narrowband Interference
+
+The AWGN and narrowband-interference experiment achieved:
 
 ```text
 Recovered SNR: 6.79 dB
 Recovered MSE: 0.001967
 ```
 
-The narrowband interferers were visible as concentrated spectral peaks and could be reduced when they were located outside the desired sideband regions.
+The narrowband interferers were visible as concentrated spectral peaks and could be suppressed when they were located outside the desired sideband regions.
 
-However, the broadband Gaussian noise overlapped the useful signal bandwidth. Because the message and noise occupied the same frequencies, conventional filtering could not completely separate them.
+However, the broadband Gaussian noise overlapped the useful signal bandwidth. Because the message and noise occupied the same frequency regions, conventional filtering could not completely separate them.
 
 This resulted in a higher reconstruction error and lower recovered SNR.
 
@@ -433,13 +456,13 @@ This resulted in a higher reconstruction error and lower recovered SNR.
 
 The results support several important signal-processing conclusions:
 
-- DSB-SC modulation translates the baseband spectrum to symmetric carrier-centered sidebands.
+- DSB-SC modulation translates the baseband spectrum to symmetric sidebands around the carrier frequency.
 - FFT analysis provides direct visibility into signal bandwidth, carrier placement, noise, and interference.
-- Welch PSD estimation provides a smoother view of energy distribution and noise-floor behavior.
+- Welch PSD estimation provides a smoother representation of signal and noise power.
 - Bandpass filtering is effective when unwanted components are outside the desired signal bands.
 - Frequency-domain masking provides direct control over the retained spectral regions.
 - Narrowband interferers are easier to identify and suppress than broadband in-band noise.
-- AWGN cannot be completely removed when it overlaps the desired message spectrum.
+- AWGN cannot be completely removed when it overlaps the useful message spectrum.
 - Coherent demodulation requires an accurately synchronized carrier.
 - Low-pass filtering is required to isolate the recovered baseband component.
 - SNR and MSE provide complementary measurements of signal-recovery quality.
@@ -474,7 +497,7 @@ DSB-SC-SIGNAL-RECOVERY-MATLAB/
 
 ### `dsb_sc_audio_noise_recovery.m`
 
-Implements the complete DSB-SC modulation and recovery chain using a recorded audio-noise input.
+Implements the complete modulation and recovery chain using recorded audio noise.
 
 The script includes:
 
@@ -494,11 +517,11 @@ The script includes:
 
 ### `dsb_sc_awgn_interference_recovery.m`
 
-Implements the second channel experiment using:
+Implements the second experiment using:
 
 - Additive White Gaussian Noise
 - Narrowband sinusoidal interference
-- Spectral analysis
+- FFT and PSD analysis
 - Bandpass filtering
 - Coherent demodulation
 - Signal reconstruction
@@ -508,20 +531,20 @@ Implements the second channel experiment using:
 
 ## Audio Files
 
-### Inputs
+### Input Files
 
 - [`audio_signal.m4a`](audio_signal.m4a) — Baseband message audio
 - [`noise_signal.m4a`](noise_signal.m4a) — Recorded noise used in Experiment 1
 
-### Generated Outputs
+### Generated Output Files
 
 - [`clean_message.wav`](clean_message.wav) — Normalized baseband message
-- [`noise_only.wav`](noise_only.wav) — Normalized noise signal
-- [`noisy_message.wav`](noisy_message.wav) — Message combined with noise
+- [`noise_only.wav`](noise_only.wav) — Normalized recorded-noise signal
+- [`noisy_message.wav`](noisy_message.wav) — Baseband message combined with noise
 - [`noisy_message_baseband.wav`](noisy_message_baseband.wav) — Additional noisy baseband output
-- [`recovered_message.wav`](recovered_message.wav) — Reconstructed message after demodulation and filtering
+- [`recovered_message.wav`](recovered_message.wav) — Reconstructed message after filtering and demodulation
 
-Generated output files may be overwritten when the scripts are executed again.
+Generated files may be overwritten when the scripts are executed again.
 
 ---
 
@@ -573,12 +596,14 @@ When prompted:
 
 The script will:
 
-- Generate the time- and frequency-domain plots
+- Generate time-domain plots
+- Generate FFT magnitude and phase plots
 - Calculate Welch PSD estimates
+- Estimate the message bandwidth
 - Design and apply the filters
 - Recover and play the message
 - Save the output audio
-- Display SNR and MSE in the Command Window
+- Display the calculated SNR and MSE
 
 ### 4. Run the AWGN and Interference Experiment
 
@@ -586,7 +611,7 @@ The script will:
 run('dsb_sc_awgn_interference_recovery.m')
 ```
 
-The script will generate the AWGN and narrowband interference, apply the recovery process, and display the corresponding results.
+The script will generate the AWGN and narrowband interference, perform the recovery process, and display the corresponding results.
 
 ---
 
@@ -607,7 +632,7 @@ The current implementation assumes:
 
 Recovery performance is influenced by:
 
-- Input signal bandwidth
+- Input-signal bandwidth
 - Noise amplitude
 - Interference frequency
 - Sampling frequency
@@ -622,13 +647,13 @@ Recovery performance is influenced by:
 
 Possible extensions include:
 
-- Input-SNR control and automated SNR sweeps
-- Output-SNR versus input-SNR plots
-- Carrier phase-offset analysis
-- Carrier frequency-offset analysis
+- Automated input-SNR control
+- Output-SNR versus input-SNR analysis
+- Carrier phase-offset simulation
+- Carrier frequency-offset simulation
 - Notch filtering for narrowband interferers
 - Adaptive noise cancellation
-- Comparison of FIR, IIR, and ideal frequency-domain filters
+- Comparison of FIR, IIR, and frequency-domain filters
 - Automatic filter-order selection
 - Spectrogram-based analysis
 - Real-time microphone input
@@ -677,24 +702,7 @@ The report includes:
 
 ## Academic Context
 
-Developed for **ECE 550 — Communication Systems** at the **University of Michigan–Dearborn**, Winter 2026.
-
----
-
-## Author
-
-**Hamza Al-Zakarneh**
-
-Electrical Engineer focused on:
-
-- Embedded systems
-- Electrical and electronic hardware design
-- Hardware validation
-- Software and test automation
-- Functional safety analysis
-- Power electronics
-- Digital signal processing
-- Automotive electronics
+Developed for **ECE 550 — Communication Systems** at the **University of Michigan**, Winter 2026.
 
 ---
 
